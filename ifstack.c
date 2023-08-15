@@ -10,6 +10,7 @@
 
 #include "ifstack.h"
 
+
 /** \brief  Doubly linked list node making up the IF stack
  */
 typedef struct ifstack_s {
@@ -28,7 +29,7 @@ static ifstack_t *stack;
 
 /** \brief  IF stack bottom reference
  *
- * Used for printing the from bottom to top.
+ * Used for printing the stack from bottom to top in ifstack_print().
  */
 static ifstack_t *stack_bottom;
 
@@ -77,13 +78,16 @@ static void ifstack_pull(void)
         exit(1);
     } else {
         ifstack_t *prev = stack->prev;
+
         lib_free(stack);
         stack = prev;
         if (stack == NULL) {
+            /* no previous condition of stack, set current state to true */
+            current_state = true;
+            /* clear stack bottom pointer */
             stack_bottom = NULL;
-        }
-
-        if (stack != NULL) {
+        } else {
+            stack->next = NULL;
             if (current_state) {
                 if (stack->in_else) {
                     current_state = !(stack->state);
@@ -91,9 +95,6 @@ static void ifstack_pull(void)
                     current_state = stack->state;
                 }
             }
-        } else {
-            /* no previous, set current state to true */
-            current_state = true;
         }
     }
 }
@@ -168,28 +169,26 @@ void ifstack_if(bool state)
 
 bool ifstack_else(void)
 {
-    if (stack != NULL && stack->in_else) {
+    if (stack == NULL) {
+        fprintf(stderr, "error: ELSE without IF.\n");
+        return false;
+    }
+    if (stack->in_else) {
         printf("error: already in ELSE branch.\n");
         return false;
     }
-    if (stack != NULL) {
-        stack->in_else = true;
-        stack->state = !stack->state;
-        /* only invert global state if it's true */
-#if 0
-        if (stack->prev == NULL || (stack->prev != NULL && stack->prev->state)) {
-#endif
-        if (current_state) {
-            current_state = !current_state;
-        } else if (stack->prev == NULL) {
-            current_state = !current_state;
-        } else if (stack->prev != NULL && stack->prev->state) {
-            current_state = !current_state;
-        }
-    } else {
-        printf("error: ELSE without IF.\n");
-        return false;
+
+    stack->in_else = true;
+    stack->state   = !stack->state;
+    /* only invert global state if it's true */
+    if (current_state) {
+        current_state = !current_state;
+    } else if (stack->prev == NULL) {
+        current_state = !current_state;
+    } else if (stack->prev != NULL && stack->prev->state) {
+        current_state = !current_state;
     }
+
     return true;
 }
 
@@ -197,7 +196,7 @@ bool ifstack_else(void)
 bool ifstack_endif(void)
 {
     if (stack == NULL) {
-        printf("error: no preceeding IF/ELSE.\n");
+        printf("error: ENDIF without preceeding IF [ELSE].\n");
         return false;
     }
 

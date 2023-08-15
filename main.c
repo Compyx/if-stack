@@ -187,7 +187,9 @@ static bool parse(const char *path)
         int i;
 
         memset(line, 0, sizeof line);
-        fgets(line, (int)(sizeof line) - 1, fp);
+        if (fgets(line, (int)(sizeof line) - 1, fp) == NULL) {
+            break;
+        }
         i = (int)strlen(line) - 1;
         while (i >= 0 && isspace((unsigned char)line[i])) {
             line[i--] = '\0';

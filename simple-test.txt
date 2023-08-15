@@ -1,24 +1,41 @@
 if true
     Print
+
     if true
         Print
+
         if false
             Should NOT print
         else
             This one SHOULD print
         endif
+
     else
         NOT print
     endif
+
+    if false
+        Should NOT print
+    else
+        SHOULD print
+    endif
 else
+
     if true
         Should NOT print
     else
         Should also NOT print
     endif
+
     if false
         Should NOT print
     else
         Should also NOT print
     endif
+endif
+
+if 0
+    should NOT print
+else
+    SHOULD print
 endif

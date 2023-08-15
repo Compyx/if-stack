@@ -159,8 +159,6 @@ bool ifstack_true(void)
 
 void ifstack_if(bool state)
 {
-//    printf("%s(): got %s.\n", __func__, state ? "true" : "false");
-
     ifstack_push(state);
     if (stack->prev == NULL || (stack->prev != NULL && stack->prev->state)) {
         current_state = state;
@@ -170,7 +168,6 @@ void ifstack_if(bool state)
 
 bool ifstack_else(void)
 {
-//    printf("%s() ", __func__);
     if (stack != NULL && stack->in_else) {
         printf("error: already in ELSE branch.\n");
         return false;
@@ -184,23 +181,21 @@ bool ifstack_else(void)
 #endif
         if (current_state) {
             current_state = !current_state;
-        } else {
-            if (stack->prev != NULL && stack->prev->state) {
-                current_state = !current_state;
-            }
+        } else if (stack->prev == NULL) {
+            current_state = !current_state;
+        } else if (stack->prev != NULL && stack->prev->state) {
+            current_state = !current_state;
         }
     } else {
         printf("error: ELSE without IF.\n");
         return false;
     }
-    printf("OK\n");
     return true;
 }
 
 
 bool ifstack_endif(void)
 {
-//    printf("%s() ", __func__);
     if (stack == NULL) {
         printf("error: no preceeding IF/ELSE.\n");
         return false;
@@ -208,7 +203,5 @@ bool ifstack_endif(void)
 
     /* pull condition of the stack */
     ifstack_pull();
-
-    printf("OK\n");
     return true;
 }

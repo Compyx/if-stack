@@ -95,7 +95,7 @@ static bool handle_if(int pos)
         }
     }
 
-    printf("%s() IF ( %s )\n", __func__, token);
+    printf("%-40s  ", "");
     ifstack_if(state);
     return true;
 }
@@ -106,7 +106,7 @@ static bool handle_if(int pos)
  */
 static bool handle_else(void)
 {
-    printf("%s()\n", __func__);
+    printf("%-40s  ", "");
     return ifstack_else();
 }
 
@@ -116,7 +116,7 @@ static bool handle_else(void)
  */
 static bool handle_endif(void)
 {
-    printf("%s()\n", __func__);
+    printf("%-40s  ", "");
     return ifstack_endif();
 }
 
@@ -126,9 +126,7 @@ static bool handle_endif(void)
  */
 static bool handle_text(void)
 {
-    if (ifstack_true()) {
-        printf("EXEC \"%s\"\n", line);
-    }
+    printf("%-40s  ", ifstack_true() ? line : "");
     return true;
 }
 
@@ -138,21 +136,27 @@ static bool handle_text(void)
  */
 static bool handle_line(void)
 {
-    int pos = get_token(0);
+    bool result;
+    int  pos;
+
+    pos = get_token(0);
     if (pos < 0) {
         /* empty line */
-        return handle_text();
-    }
-
-    if (strcasecmp(token, "if") == 0) {
-        return handle_if(pos);
-    } else if (strcasecmp(token, "else") == 0) {
-        return handle_else();
-    } else if (strcasecmp(token, "endif") == 0) {
-        return handle_endif();
+        result = handle_text();
     } else {
-        return handle_text();
+        if (strcasecmp(token, "if") == 0) {
+            result = handle_if(pos);
+        } else if (strcasecmp(token, "else") == 0) {
+            result = handle_else();
+        } else if (strcasecmp(token, "endif") == 0) {
+            result = handle_endif();
+        } else {
+            result = handle_text();
+        }
     }
+    ifstack_print();
+    putchar('\n');
+    return result;
 }
 
 /** \brief  Parse file and process IF/THEN/ELSE statements
@@ -175,6 +179,9 @@ static bool parse(const char *path)
         return false;
     }
 
+    printf("line  source                                    output                                    stack\n");
+    printf("----  ----------------------------------------  ----------------------------------------  -------------------\n");
+
     lineno = 1;
     do {
         int i;
@@ -186,7 +193,7 @@ static bool parse(const char *path)
             line[i--] = '\0';
         }
 
-        printf("[%2d]    %s\n", lineno, line);
+        printf("%4d  %-40s  ", lineno, line);
         if (!handle_line()) {
             fprintf(stderr, "%s(): error: something went wrong.\n", __func__);
             goto cleanup;

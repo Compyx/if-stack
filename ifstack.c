@@ -16,8 +16,8 @@
 typedef struct ifstack_s {
     bool              state;    /**< branch IF state */
     bool              in_else;  /**< currently in local ELSE branch */
-    struct ifstack_s *next;     /**< next node (up in stack) */
-    struct ifstack_s *prev;     /**< previous node (down in stack) */
+    struct ifstack_s *up;       /**< next node (up in stack) */
+    struct ifstack_s *down;     /**< previous node (down in stack) */
 } ifstack_t;
 
 
@@ -76,10 +76,10 @@ static void ifstack_push(bool state)
 
     node->state   = state;
     node->in_else = false;
-    node->next    = NULL;
-    node->prev    = stack;
+    node->up      = NULL;
+    node->down    = stack;
     if (stack != NULL) {
-        stack->next = node;
+        stack->up = node;
     } else {
         stack_bottom = node;
     }
@@ -94,17 +94,17 @@ static void ifstack_pull(void)
         fprintf(stderr, "%s(): error: stack empty!\n", __func__);
         exit(1);
     } else {
-        ifstack_t *prev = stack->prev;
+        ifstack_t *down = stack->down;
 
         lib_free(stack);
-        stack = prev;
+        stack = down;
         if (stack == NULL) {
             /* no previous condition of stack, set current state to true */
             current_state = true;
             /* clear stack bottom pointer */
             stack_bottom = NULL;
         } else {
-            stack->next = NULL;
+            stack->up = NULL;
             if (current_state) {
                 if (stack->in_else) {
                     current_state = !stack->state;
@@ -145,9 +145,9 @@ void ifstack_free(void)
     ifstack_t *node = stack;
 
     while (node != NULL) {
-        ifstack_t *prev = node->prev;
+        ifstack_t *down = node->down;
         lib_free(node);
-        node = prev;
+        node = down;
     }
     stack        = NULL;
     stack_bottom = NULL;
@@ -162,15 +162,9 @@ void ifstack_free(void)
  */
 void ifstack_print(void)
 {
-    ifstack_t *node = stack_bottom;
-
     putchar('[');
-    while (node != NULL) {
+    for (ifstack_t *node = stack_bottom; node != NULL; node = node->up) {
         putchar(node->state ? '1' : '0');
-        if (node->next != NULL) {
-            printf(", ");
-        }
-        node = node->next;
     }
     putchar(']');
 }
@@ -193,7 +187,7 @@ bool ifstack_true(void)
 void ifstack_if(bool state)
 {
     ifstack_push(state);
-    if (stack->prev == NULL || (stack->prev != NULL && stack->prev->state)) {
+    if (stack->down == NULL || (stack->down != NULL && stack->down->state)) {
         current_state = state;
     }
 }
@@ -221,9 +215,9 @@ bool ifstack_else(void)
     /* only invert global state if it's true */
     if (current_state) {
         current_state = !current_state;
-    } else if (stack->prev == NULL) {
+    } else if (stack->down == NULL) {
         current_state = !current_state;
-    } else if (stack->prev != NULL && stack->prev->state) {
+    } else if (stack->down != NULL && stack->down->state) {
         current_state = !current_state;
     }
 

@@ -38,6 +38,12 @@ static ifstack_t *stack_bottom;
 static bool       current_state;
 
 
+/** \brief  Allocate memory, exit when OOM
+ *
+ * Allocate \a size bytes on heap, call `exit(1)` when out of memory.
+ *
+ * \param[in]   size    number of bytes to allocate
+ */
 static void *lib_malloc(size_t size)
 {
     void *ptr = malloc(size);
@@ -50,11 +56,20 @@ static void *lib_malloc(size_t size)
     return ptr;
 }
 
+/** \brief  Free memory
+ *
+ * \param[in]   ptr memory to free
+ */
 static void lib_free(void *ptr)
 {
     free(ptr);
 }
 
+
+/** \brief  Push new condition onto the stack
+ *
+ * Register an \c IF with condition \a state.
+ */
 static void ifstack_push(bool state)
 {
     ifstack_t *node = lib_malloc(sizeof *node);
@@ -71,6 +86,8 @@ static void ifstack_push(bool state)
     stack = node;
 }
 
+/** \brief  Pull current condtion off the stack
+ */
 static void ifstack_pull(void)
 {
     if (stack == NULL) {
@@ -90,7 +107,7 @@ static void ifstack_pull(void)
             stack->next = NULL;
             if (current_state) {
                 if (stack->in_else) {
-                    current_state = !(stack->state);
+                    current_state = !stack->state;
                 } else {
                     current_state = stack->state;
                 }
@@ -100,8 +117,30 @@ static void ifstack_pull(void)
 }
 
 
+/** \brief  Initialize stack for use
+ */
+void ifstack_init(void)
+{
+    stack         = NULL;
+    stack_bottom  = NULL;
+    current_state = true;
+}
 
-static void ifstack_free(void)
+
+/** \brief  Reset stack for reuse
+ *
+ * Frees any old stack remaining and initializes the stack for reuse.
+ */
+void ifstack_reset(void)
+{
+    ifstack_free();
+    ifstack_init();
+}
+
+
+/** \brief  Free the stack
+ */
+void ifstack_free(void)
 {
     ifstack_t *node = stack;
 
@@ -110,32 +149,17 @@ static void ifstack_free(void)
         lib_free(node);
         node = prev;
     }
+    stack        = NULL;
+    stack_bottom = NULL;
 }
 
 
-
-void ifstack_init(void)
-{
-    stack = NULL;
-    ifstack_reset();
-}
-
-
-void ifstack_reset(void)
-{
-    ifstack_free();
-    stack         = NULL;
-    stack_bottom  = NULL;
-    current_state = true;
-}
-
-
-void ifstack_shutdown(void)
-{
-    ifstack_free();
-}
-
-
+/** \brief  Print stack contents on stdout
+ *
+ * Print the current stack as an array of 0's and 1's.
+ *
+ * \note    Doesn't print a newline at the end.
+ */
 void ifstack_print(void)
 {
     ifstack_t *node = stack_bottom;
@@ -152,12 +176,20 @@ void ifstack_print(void)
 }
 
 
+/** \brief  Get global condition of stack
+ *
+ * \return  current condition
+ */
 bool ifstack_true(void)
 {
     return current_state;
 }
 
 
+/** \brief  Push new IF condition on stack, update global condition
+ *
+ * \param[in]   state   condition of IF statement
+ */
 void ifstack_if(bool state)
 {
     ifstack_push(state);
@@ -167,6 +199,12 @@ void ifstack_if(bool state)
 }
 
 
+/** \brief  Process ELSE branch
+ *
+ * Notify the stack an ELSE branch should now be taken.
+ *
+ * \return  \c false if no preceeding IF or already in ELSE branch
+ */
 bool ifstack_else(void)
 {
     if (stack == NULL) {
@@ -174,7 +212,7 @@ bool ifstack_else(void)
         return false;
     }
     if (stack->in_else) {
-        printf("error: already in ELSE branch.\n");
+        fprintf(stderr, "error: already in ELSE branch.\n");
         return false;
     }
 
@@ -193,14 +231,20 @@ bool ifstack_else(void)
 }
 
 
+/** \brief  Process ENDIF
+ *
+ * Notify the stack an ENDIF statement should be handled.
+ *
+ * \return  \c false if there's no preceeding IF/ELSE
+ */
 bool ifstack_endif(void)
 {
     if (stack == NULL) {
-        printf("error: ENDIF without preceeding IF [ELSE].\n");
+        fprintf(stderr, "error: ENDIF without preceeding IF [ELSE].\n");
         return false;
     }
 
-    /* pull condition of the stack */
+    /* pull condition off the stack */
     ifstack_pull();
     return true;
 }

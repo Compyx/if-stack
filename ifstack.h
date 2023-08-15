@@ -11,7 +11,7 @@
 
 void ifstack_init(void);
 void ifstack_reset(void);
-void ifstack_shutdown(void);
+void ifstack_free(void);
 void ifstack_print(void);
 
 void ifstack_if(bool state);

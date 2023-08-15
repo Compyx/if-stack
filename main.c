@@ -15,10 +15,11 @@
 
 #include "ifstack.h"
 
-
+/** \brief  Boolean value translation
+ */
 typedef struct bvalue_s {
-    const char *text;
-    bool        value;
+    const char *text;   /**< text */
+    bool        value;  /**< boolean value */
 } bvalue_t;
 
 
@@ -28,11 +29,15 @@ static char line[256];
 /** \brief  Token buffer */
 static char token[sizeof line];
 
+/** \brief  Table of words to translate to boolean values
+ */
 static const bvalue_t booleans[] = {
     { "0",      false },
     { "1",      true  },
     { "false",  false },
-    { "true",   true  }
+    { "true",   true  },
+    { "no",     false },
+    { "yes",    true  }
 };
 
 
@@ -179,18 +184,18 @@ static bool parse(const char *path)
         return false;
     }
 
-    printf("line  source                                    output                                    stack\n");
-    printf("----  ----------------------------------------  ----------------------------------------  -------------------\n");
+    printf("line  source                                  "
+           "  output                                    stack\n");
+    printf("----  ----------------------------------------"
+           "  ----------------------------------------  -----\n");
 
     lineno = 1;
     do {
-        int i;
-
         memset(line, 0, sizeof line);
         if (fgets(line, (int)(sizeof line) - 1, fp) == NULL) {
             break;
         }
-        i = (int)strlen(line) - 1;
+        int i = (int)strlen(line) - 1;
         while (i >= 0 && isspace((unsigned char)line[i])) {
             line[i--] = '\0';
         }
@@ -238,6 +243,6 @@ int main(int argc, char *argv[])
         status = EXIT_FAILURE;
     }
 
-    ifstack_shutdown();
+    ifstack_free();
     return status;
 }

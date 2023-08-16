@@ -116,6 +116,7 @@ void ifstack_init(void)
 {
     stack         = NULL;
     stack_bottom  = NULL;
+    ifstack_errno = 0;
     current_state = true;
 }
 

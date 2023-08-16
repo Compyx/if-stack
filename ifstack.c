@@ -21,6 +21,13 @@ typedef struct ifstack_s {
 } ifstack_t;
 
 
+/** \brief  Error message strings */
+static const char *err_messages[] = {
+    "OK",
+    "else without if",
+    "endif without if"
+};
+
 /** \brief  IF stack reference
  *
  * This references the top of the stack.
@@ -38,41 +45,27 @@ static ifstack_t *stack_bottom;
 static bool       current_state;
 
 
-/** \brief  Allocate memory, exit when OOM
- *
- * Allocate \a size bytes on heap, call `exit(1)` when out of memory.
- *
- * \param[in]   size    number of bytes to allocate
+/** \brief  Error code
  */
-static void *lib_malloc(size_t size)
-{
-    void *ptr = malloc(size);
-    if (ptr == NULL) {
-        fprintf(stderr,
-                "%s(): failed to allocate %zu bytes, exiting.\n",
-                __func__, size);
-        exit(1);
-    }
-    return ptr;
-}
-
-/** \brief  Free memory
- *
- * \param[in]   ptr memory to free
- */
-static void lib_free(void *ptr)
-{
-    free(ptr);
-}
+int ifstack_errno = 0;
 
 
 /** \brief  Push new condition onto the stack
  *
  * Register an \c IF with condition \a state.
+ *
+ * \note    Calls \c exit(1) on out-of-memory.
  */
 static void ifstack_push(bool state)
 {
-    ifstack_t *node = lib_malloc(sizeof *node);
+    ifstack_t *node = malloc(sizeof *node);
+
+    if (node == NULL) {
+        fprintf(stderr,
+                "%s(): failed to allocate %zu bytes, exiting.\n",
+                __func__, sizeof *node);
+        exit(1);
+    }
 
     node->state   = state;
     node->in_else = false;
@@ -96,7 +89,7 @@ static void ifstack_pull(void)
     } else {
         ifstack_t *down = stack->down;
 
-        lib_free(stack);
+        free(stack);
         stack = down;
         if (stack == NULL) {
             /* no previous condition of stack, set current state to true */
@@ -146,7 +139,8 @@ void ifstack_free(void)
 
     while (node != NULL) {
         ifstack_t *down = node->down;
-        lib_free(node);
+
+        free(node);
         node = down;
     }
     stack        = NULL;
@@ -201,12 +195,8 @@ void ifstack_if(bool state)
  */
 bool ifstack_else(void)
 {
-    if (stack == NULL) {
-        fprintf(stderr, "error: ELSE without IF.\n");
-        return false;
-    }
-    if (stack->in_else) {
-        fprintf(stderr, "error: already in ELSE branch.\n");
+    if (stack == NULL || stack->in_else) {
+        ifstack_errno = IFSTACK_ERR_ELSE_WITHOUT_IF;
         return false;
     }
 
@@ -234,11 +224,27 @@ bool ifstack_else(void)
 bool ifstack_endif(void)
 {
     if (stack == NULL) {
-        fprintf(stderr, "error: ENDIF without preceeding IF [ELSE].\n");
+        ifstack_errno = IFSTACK_ERR_ENDIF_WITHOUT_IF;
         return false;
     }
 
     /* pull condition off the stack */
     ifstack_pull();
     return true;
+}
+
+
+/** \brief  Get error message for error number
+ *
+ * \param[in]   errnum  error number
+ *
+ * \return  error message
+ */
+const char *ifstack_strerror(int errnum)
+{
+    if (errnum < 0 || errnum >= (int)(sizeof err_messages / sizeof err_messages[0])) {
+        return "invalid error number";
+    } else {
+        return err_messages[errnum];
+    }
 }

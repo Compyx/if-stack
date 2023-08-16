@@ -1,0 +1,7 @@
+if 1
+    This PRINTS
+else
+    This should NOT print
+else
+    This should have triggered ERROR
+endif

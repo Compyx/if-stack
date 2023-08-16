@@ -1,0 +1,6 @@
+if 1
+    SHOULD print
+endif
+
+Next line should trigger ERROR:
+endif

@@ -1,0 +1,2 @@
+Test ENDIF without preceeding IF:
+endif

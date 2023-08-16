@@ -202,7 +202,9 @@ static bool parse(const char *path)
 
         printf("%4d  %-40s  ", lineno, line);
         if (!handle_line()) {
-            fprintf(stderr, "%s(): error: something went wrong.\n", __func__);
+            fprintf(stderr,
+                    "%s(): error %d: %s\n",
+                    __func__, ifstack_errno, ifstack_strerror(ifstack_errno));
             goto cleanup;
         }
 

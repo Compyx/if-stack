@@ -116,9 +116,14 @@ static void ifstack_pull(void)
         } else {
             stack->up = NULL;
             if (current_state) {
+                // printf("%s(): current_state = true, check in_else\n", __func__);
                 if (stack->in_else) {
+                    // printf("%s(): in_else: taking !stack->state == %s\n",
+                    //        __func__, !stack->state ? "true" : "false");
                     current_state = !stack->state;
                 } else {
+                    //printf("%s(): NOT in_else: taking stack->state == %s\n",
+                    //        __func__, stack->state ? "true" : "false");
                     current_state = stack->state;
                 }
             }
@@ -222,10 +227,11 @@ bool ifstack_else(void)
     stack->state   = !stack->state;
     /* only invert global state if it's true */
     if (current_state) {
-        current_state = !current_state;
-    } else if (stack->down == NULL) {
-        current_state = !current_state;
+        //printf("%s(): current state is true, setting to false\n", __func__);
+        current_state = false;
     } else if (stack->down != NULL && stack->down->state) {
+        //printf("%s(): previous condition present and true, setting current state to !current_state == %s\n",
+        //        __func__, !current_state ? "true" : "false");
         current_state = !current_state;
     }
 

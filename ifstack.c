@@ -216,8 +216,7 @@ bool ifstack_else(void)
            __func__, stack->state ? "true" : "false", current_state ? "true" : "false");
 
     stack->in_else = true;
-    stack->state   = !stack->state;
-
+    stack->state  = !stack->state;
 #if 0
     /* only invert global state if it's true */
     if (current_state) {
@@ -244,7 +243,7 @@ bool ifstack_else(void)
         }
     }
 #endif
-    /* if previous condition present AND false: DONT invert global condition */
+    /* if previous condition present AND false: DON'T invert global condition */
     if (!(stack->down != NULL && !(stack->down->state))) {
         current_state = !current_state;
     }

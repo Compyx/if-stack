@@ -115,18 +115,7 @@ static void ifstack_pull(void)
             stack_bottom = NULL;
         } else {
             stack->up = NULL;
-            if (current_state) {
-                // printf("%s(): current_state = true, check in_else\n", __func__);
-                if (stack->in_else) {
-                    // printf("%s(): in_else: taking !stack->state == %s\n",
-                    //        __func__, !stack->state ? "true" : "false");
-                    current_state = !stack->state;
-                } else {
-                    //printf("%s(): NOT in_else: taking stack->state == %s\n",
-                    //        __func__, stack->state ? "true" : "false");
-                    current_state = stack->state;
-                }
-            }
+            current_state = stack->state;
         }
     }
 }
@@ -223,17 +212,45 @@ bool ifstack_else(void)
         return false;
     }
 
+    printf("%s(): stack->state = %s, global = %s ... inverting stack->state\n",
+           __func__, stack->state ? "true" : "false", current_state ? "true" : "false");
+
     stack->in_else = true;
     stack->state   = !stack->state;
+
+#if 0
     /* only invert global state if it's true */
     if (current_state) {
-        //printf("%s(): current state is true, setting to false\n", __func__);
+        /* invert global state */
+        printf("%s(): current state is true, setting to false\n", __func__);
         current_state = false;
-    } else if (stack->down != NULL && stack->down->state) {
-        //printf("%s(): previous condition present and true, setting current state to !current_state == %s\n",
-        //        __func__, !current_state ? "true" : "false");
+    } else {
+        printf("%s(): current state is false...\n", __func__);
+
+        if (stack->down != NULL) {
+            if (stack->down->state) {
+                printf("%s(): previous condition present and true, setting current state to true\n",
+                    __func__);
+                /* invert state */
+                current_state = true;
+            } else {
+                printf("%s(): previous condition present and false ... ignore\n", __func__);
+                /* do nothing */
+            }
+        } else {
+            printf("%s(): no previous condition, set condition to true\n", __func__);
+            /* invert state */
+            current_state = true;
+        }
+    }
+#endif
+    /* if previous condition present AND false: DONT invert global condition */
+    if (!(stack->down != NULL && !(stack->down->state))) {
         current_state = !current_state;
     }
+
+    printf("%s(): stack->state = %s, global = %s\n",
+           __func__, stack->state ? "true" : "false", current_state ? "true" : "false");
 
     return true;
 }

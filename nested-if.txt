@@ -8,3 +8,49 @@ if true
 else
     Should NOT print
 endif
+
+if true
+    if true
+        PRINTS
+
+        if false
+            should NOT print
+        else
+            PRINTS
+        endif
+        PRINTS
+    else
+        if true
+            should NOT print
+        else
+            should NOT print
+        endif
+        should NOT print
+        if false
+            should NOT print
+        else
+            should NOT print
+        endif
+        should not PRINT
+    endif
+    PRINTS
+endif
+PRINTS
+
+if false
+    NOT print
+    if true
+        NOT print
+    else
+        NOT print
+    endif
+else
+    PRINT
+    if false
+        NOT print
+    else
+        PRINTS
+    endif
+    PRINTS
+endif
+

@@ -1,0 +1,37 @@
+Cart items include:
+
+if false
+    NOT print
+    if true
+        NOT print
+        if false
+            NOT print
+        endif
+    else
+        NOT print
+        if false
+            NOT print
+        endif
+        NOT print
+    endif
+    NOT print
+endif
+should PRINT
+
+
+Joystick/mouse:
+
+if true
+    should PRINT (mouse-grab-toggle)
+    if false
+        NOT print (swap-controlport)
+    endif
+    should PRINT (keyset-toggle)
+else
+    NOT print (mouse-grab-MacOS)
+    if false
+        NOT print (controlport-MacOS)
+    endif
+    NOT print (keyset-toggle-MacOS)
+endif
+PRINT again

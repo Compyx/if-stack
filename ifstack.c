@@ -115,6 +115,7 @@ static void ifstack_pull(void)
             stack_bottom = NULL;
         } else {
             stack->up = NULL;
+            printf("%s() stack->state = %s\n", __func__, stack->state ? "true" : "false");
             current_state = stack->state;
         }
     }
@@ -217,7 +218,7 @@ bool ifstack_else(void)
 
     stack->in_else = true;
     stack->state  = !stack->state;
-#if 0
+
     /* only invert global state if it's true */
     if (current_state) {
         /* invert global state */
@@ -242,12 +243,15 @@ bool ifstack_else(void)
             current_state = true;
         }
     }
-#endif
+
+#if 0
     /* if previous condition present AND false: DON'T invert global condition */
     if (!(stack->down != NULL && !(stack->down->state))) {
         current_state = !current_state;
+    } else if (stack->down == NULL) {
+        current_state = !current_state;
     }
-
+#endif
     printf("%s(): stack->state = %s, global = %s\n",
            __func__, stack->state ? "true" : "false", current_state ? "true" : "false");
 
